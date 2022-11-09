@@ -1,6 +1,9 @@
 const Bio = require("../models/bioModel");
+const Like = require("../models/likeModel");
 const Post = require("../models/postModel");
 const User = require("../models/userModel");
+const setPostLikes = require("../utils/helpers/setPostLikes");
+
 
 const create = async (req, res) => {
   try {
@@ -16,7 +19,7 @@ const byuser = async (req, res) => {
 
   
   try {
-    const user = await User.findOne({ username: req.params.username });
+    const user = await User.findOne({ username: req.params.username }).lean()
     const NoOfDocs= await Post.find({user_id: user._id}).count()
     const totalpages=Math.ceil(NoOfDocs/10)
     const data = await Post.aggregate([
@@ -46,6 +49,14 @@ const byuser = async (req, res) => {
           as: "user",
         },
       },
+      {
+        $lookup: {
+          from: "likes",
+          localField:"_id" ,
+          foreignField: "post_id",
+          as: "like",
+        },
+      },
       { $unwind: "$bio",},
       { $unwind: "$user",},
      
@@ -59,10 +70,12 @@ const byuser = async (req, res) => {
       
     ]);
 
-   
+
+    const out =await setPostLikes(data,req.body.user_id)
+     
   
 
-    return res.status(200).send({ posts: data,totalpages });
+    return res.status(200).send({ posts: out,totalpages });
   } catch (e) {
     console.log("e", e);
     res.status(500).send(e.message);
@@ -70,4 +83,27 @@ const byuser = async (req, res) => {
 };
 
 
-module.exports = { create, byuser };
+
+
+const like = async (req, res) => {
+  try {
+
+     const data = await Like.create({post_id:req.params.post_id,user_id:req.body.user_id});
+     return res.status(202).send(data);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+};
+
+const unlike = async (req, res) => {
+  try {
+
+    const data= await Like.findOneAndDelete({post_id:req.params.post_id,user_id:req.body.user_id})
+    return res.status(200).send(data);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+};
+
+
+module.exports = { create,byuser,like,unlike};

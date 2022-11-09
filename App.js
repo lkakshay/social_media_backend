@@ -48,9 +48,11 @@ app.post(
 );
 app.post("/api/login", loginController);
 
-//test
-app.get("/", async (req, res) => {
-  return res.send("server running");
+//user status
+
+app.get("/api/checkuser",tokenValidator,async (req, res) => {
+  const token = req.headers.authorization.split(" ")[1];
+  return res.status(200).send({status:200,token});
 });
 
 app.use("/api/post", tokenValidator, postRoute);
