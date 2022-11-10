@@ -60,9 +60,8 @@ const follow = async (req, res) => {
 };
 
 const unfollow = async (req, res) => {
-  console.log("req.params", req.params);
   try {
-    const data = await Follow.findOneAndDelete({
+    const data = await Follow.deleteMany({
       $and: [
         { user_id: req.body.user_id },
         { following_id: req.params.user_id },
