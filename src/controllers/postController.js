@@ -17,7 +17,7 @@ const byuser = async (req, res) => {
   const skip = (+req.params.page - 1) * 10;
   try {
     const client = await User.findOne({ _id: req.body.user_id });
-   
+
     const user = await User.findOne({ username: req.params.username });
     const docs = await User.aggregate([
       {
@@ -57,6 +57,7 @@ const byuser = async (req, res) => {
           post: 1,
           user_id: 1,
           profilePic: "$bio.imgUrl",
+          username: 1,
         },
       },
       {
@@ -83,7 +84,6 @@ const byuser = async (req, res) => {
           post: 1,
           "likedUsers.username": 1,
           "likedUsers._id": 1,
-          username: 1,
           isLiked: { $in: [client._id, "$likedUsers._id"] },
         },
       },
@@ -144,28 +144,53 @@ const explore = async (req, res) => {
   try {
     const client = await User.findOne({ _id: req.body.user_id });
     const data = await Post.aggregate([
+
       {
         $match: {
           user_id: { $ne: client._id },
         },
       },
       {
-        $sample: { size: 20 },
+        $group: {
+          post: { $push: "$$ROOT" },
+          _id: client._id,
+        },
+      },
+      { $unwind: "$post" },
+      {
+        $lookup: {
+          from: "follows",
+          localField: "_id",
+          foreignField: "user_id",
+          as: "following",
+        },
       },
       {
-        $group: {
-          _id: null,
-          post: { $push: "$$ROOT" },
+        $project: {
+          _id: 1,
+          following_id: "$following.following_id",
+          isFollowing: { $in: ["$post.user_id","$following.following_id"] },
+          post: 1,
+        },
+      },
+     
+      {
+        $match: {
+          isFollowing:false,
         },
       },
 
       {
+        $sample: { size:12},
+      },
+    
+
+      {
         $project: {
-          _id: 0,
+          _id:0,
           post: 1,
         },
       },
-      { $unwind: "$post" },
       {
         $lookup: {
           from: "bios",
@@ -231,6 +256,8 @@ const explore = async (req, res) => {
         },
       },
     ]);
+    console.log(data[0]);
+    console.log(data.length);
 
     return res.status(200).send(data);
   } catch (e) {
