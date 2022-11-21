@@ -256,8 +256,6 @@ const explore = async (req, res) => {
         },
       },
     ]);
-    console.log(data[0]);
-    console.log(data.length);
 
     return res.status(200).send(data);
   } catch (e) {
