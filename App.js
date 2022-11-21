@@ -22,6 +22,11 @@ app.use(
 app.use(fileUpload());
 app.use(cookieParser());
 
+
+app.get('/',async(req,res)=>{
+  return res.send(process.env.ORIGIN)
+})
+
 const {
   registerValidator,
   registerValidatorResult,
