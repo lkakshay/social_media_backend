@@ -1,10 +1,14 @@
 const fileUpload = require("express-fileupload");
 const ImageKit = require("imagekit");
+require("dotenv").config();
+const publicKey = process.env.PUBLICKEY;
+const privateKey = process.env.PRIVATEKEY;
+const urlEndpoint = process.env.URLENDPOINT;
 
 const imagekit = new ImageKit({
-  publicKey: "public_ZNIIUqrjtUcM2q/qj7KAw7rJNWQ=",
-  privateKey: "private_RNXeOiiq3O7IlNvCrBW0y7FXXfA=",
-  urlEndpoint: "https://ik.imagekit.io/g3buj3pst",
+  publicKey,
+  privateKey,
+  urlEndpoint,
 });
 
 const uploadToCloud = async (file) => {
@@ -23,13 +27,11 @@ const uploadToCloud = async (file) => {
 };
 
 const uploadfile = async (req, res, next) => {
-
   if (req.files) {
     const url = await uploadToCloud(req.files.image);
     if (url !== "error") req.body.imgUrl = url;
   }
   return next();
-
 };
 
 module.exports = uploadfile;
